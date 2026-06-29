@@ -10,11 +10,9 @@ let ti = 0, ts = null, sl = 180, tmrI = null;
 let aiLevel = null, results = [];
 const DATE = new Date().toLocaleDateString("en-GB");
 
-// ── ANSWER CHECK ──────────────────────────────
 function chk(task, ans) {
   if (task.type === "open") return { v: "open", l: "Open-ended — researcher scores manually" };
   if (!ans) return { v: "incorrect", l: "Incorrect ✗" };
-  // Strip everything except digits and commas, then compare
   const clean = ans.replace(/[^0-9]/g, "");
   const ok = task.ok.some(x => clean === x.replace(/[^0-9]/g, ""));
   return { v: ok ? "correct" : "incorrect", l: ok ? "Correct ✓" : "Incorrect ✗" };
@@ -24,13 +22,11 @@ function pct(scores) {
   return Math.round((scores.reduce((a, b) => a + b, 0) * 100 / 5) / scores.length);
 }
 
-// ── SCREEN ROUTING ────────────────────────────
 function show(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("on"));
   document.getElementById(id).classList.add("on");
 }
 
-// ── ENTRY ─────────────────────────────────────
 function startExp() {
   const p = document.getElementById("pid-input").value.trim();
   const s = document.getElementById("sess-input").value.trim() || "1";
@@ -46,26 +42,21 @@ function startExp() {
 
 function goEntry() { show("s-entry"); }
 
-// ── TASK LOAD ─────────────────────────────────
 function load(i) {
   ti = i; aiLevel = null; ts = Date.now(); sl = 180;
   const t = TASKS[i];
-
   document.getElementById("tnum").textContent     = `Task ${i + 1} of ${TASKS.length}`;
   document.getElementById("qbox").textContent     = t.q;
   document.getElementById("ans-hint").textContent = t.ans_hint || "";
-
   const db = document.getElementById("diff");
   db.textContent = t.diff.charAt(0).toUpperCase() + t.diff.slice(1);
   db.className   = "diff " + t.diff;
-
   document.getElementById("ans").value            = "";
   document.getElementById("csl").value            = 4;
   document.getElementById("cv").textContent       = "4";
   document.getElementById("ai-score-lbl").textContent = "AI usage: 0/5";
   document.getElementById("ai-pill").textContent  = "Not used";
   document.getElementById("msgs").innerHTML       = '<div class="m sys">Hello! How can I help today?<br><br>Choose an option below.</div>';
-
   resetBgrp();
   document.getElementById("subbtn").disabled = false;
   clearInterval(tmrI); tick0();
@@ -80,7 +71,6 @@ function resetBgrp() {
     <button class="ai-btn btn-sec" onclick="aiChoice('none')" style="font-size:12px">I don't need help</button>`;
 }
 
-// ── TIMER ─────────────────────────────────────
 function tick() {
   sl--;
   tick0();
@@ -93,11 +83,9 @@ function tick0() {
   el.className = "tmr" + (sl < 30 ? " urg" : "");
 }
 
-// ── AI PANEL ──────────────────────────────────
 function aiChoice(c) {
   const t = TASKS[ti];
   const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
-
   if (c === "none") {
     aiLevel = "none";
     addMsg("Understood — I'll let you work independently.");
@@ -107,7 +95,6 @@ function aiChoice(c) {
     log("ai_choice", "none score=0");
     return;
   }
-
   if (c === "hint1") {
     aiLevel = "hint1";
     addMsg(t.hint1);
@@ -121,7 +108,6 @@ function aiChoice(c) {
       <button class="ai-btn btn-sec" onclick="closeAI()" style="font-size:12px">That's enough, thanks</button>`;
     return;
   }
-
   if (c === "hint2") {
     aiLevel = "hint2";
     addMsg(t.hint2);
@@ -133,7 +119,6 @@ function aiChoice(c) {
       <button class="ai-btn btn-sec" onclick="closeAI()" style="font-size:12px">That's enough, thanks</button>`;
     return;
   }
-
   if (c === "full") {
     aiLevel = "full";
     addMsg(t.full);
@@ -155,12 +140,10 @@ function addMsg(txt) {
   b.appendChild(d); b.scrollTop = b.scrollHeight;
 }
 
-// ── SUBMIT ────────────────────────────────────
 function sub(to) {
   if (document.getElementById("subbtn").disabled && !to) return;
   document.getElementById("subbtn").disabled = true;
   clearInterval(tmrI);
-
   const elapsed  = 180 - sl;
   const ans      = document.getElementById("ans").value.trim();
   const cf       = +document.getElementById("csl").value;
@@ -168,11 +151,8 @@ function sub(to) {
   const { v, l } = chk(t, ans);
   const aiScore  = AI_SCORES[aiLevel || "none"];
   const cogScore = COG_MAP[aiScore];
-
   results.push({ task_id: t.id, diff: t.diff, elapsed_s: elapsed, answer: ans, verdict: v, confidence: cf, ai_level: aiLevel || "none", ai_score: aiScore, cog_score: cogScore });
   log("task_submit", `elapsed=${elapsed}s verdict=${v} ai=${aiScore} cog=${cogScore}`);
-
-  // Show overlay
   document.getElementById("ovt").textContent = to ? "Time up" : "Task submitted";
   const re = document.getElementById("ovr");
   re.textContent = l; re.className = "res " + v;
@@ -194,7 +174,6 @@ function nxt() {
   if (ti + 1 < TASKS.length) { load(ti + 1); } else { showDone(); }
 }
 
-// ── SESSION RESULTS ───────────────────────────
 function buildSummHTML() {
   const aiScores  = results.map(r => r.ai_score);
   const cogScores = results.map(r => r.cog_score);
@@ -202,7 +181,6 @@ function buildSummHTML() {
   const cogPct    = pct(cogScores);
   const exact     = results.filter(r => r.verdict !== "open");
   const correct   = exact.filter(r => r.verdict === "correct").length;
-
   let h = `<b>Participant ID:</b> ${PID}<br>`;
   h += `<b>Session:</b> ${SESS} &nbsp;·&nbsp; <b>Date:</b> ${DATE}<br>`;
   h += `<b>Number of correct answers:</b> ${correct} / ${exact.length}<br><br>`;
@@ -224,19 +202,22 @@ function showDone() {
   show("s-done");
 }
 
-// ── PRINT ─────────────────────────────────────
 function showPrint() {
   document.getElementById("print-content").innerHTML = buildSummHTML().replace(/&nbsp;/g, " ");
   document.getElementById("print-footer").textContent = `Generated: ${new Date().toLocaleString()} · Please email this PDF to the researcher.`;
   document.getElementById("print-overlay").style.display = "block";
-  setTimeout(() => window.print(), 400);
+  const origTitle = document.title;
+  document.title = `assessment_${PID}_session${SESS}`;
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { document.title = origTitle; }, 2000);
+  }, 400);
 }
 
 function closePrint() {
   document.getElementById("print-overlay").style.display = "none";
 }
 
-// ── EVENT LOG ─────────────────────────────────
 function log(type, detail) {
   const elapsed = ts ? ((Date.now() - ts) / 1000).toFixed(1) : "0.0";
   const tb  = document.getElementById("logb");
