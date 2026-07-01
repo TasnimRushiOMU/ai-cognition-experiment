@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cognitive Experiment</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:14px;color:#1a1a1a;background:#f5f4f0}
+.wrap{display:flex;flex-direction:column;min-height:100vh}
+.screen{display:none;flex-direction:column;flex:1}
+.screen.on{display:flex}
+
+/* ENTRY */
+.entry{align-items:center;justify-content:center;padding:40px 20px;min-height:100vh}
+.entry-card{background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:32px;width:100%;max-width:440px;display:flex;flex-direction:column;gap:16px}
+.entry-card h2{font-size:16px;font-weight:500}
+.entry-card p{font-size:13px;color:#666;line-height:1.6}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:#999;font-weight:500;letter-spacing:.03em}
+.field input{padding:9px 12px;border:1px solid #ddd;border-radius:8px;background:#fafafa;color:#1a1a1a;font-size:14px;outline:none;transition:border-color .15s}
+.field input:focus{border-color:#5b6af0}
+.field .hint{font-size:11px;color:#999}
+.err{font-size:12px;color:#c0392b;display:none;margin-top:2px}
+
+/* DEMOGRAPHIC FORM */
+.demo-card{background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:28px;width:100%;max-width:500px;display:flex;flex-direction:column;gap:14px}
+.demo-card h2{font-size:16px;font-weight:500}
+.demo-card p{font-size:13px;color:#666;line-height:1.6}
+.demo-section{display:flex;flex-direction:column;gap:6px}
+.demo-section label{font-size:12px;color:#999;font-weight:500;letter-spacing:.03em}
+.radio-group{display:flex;flex-wrap:wrap;gap:8px}
+.radio-opt input[type=radio]{display:none}
+.radio-opt label{display:flex;align-items:center;justify-content:center;padding:7px 14px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#555;cursor:pointer;background:#fafafa;transition:all .15s;white-space:nowrap}
+.radio-opt input[type=radio]:checked + label{background:#5b6af0;color:#fff;border-color:#5b6af0;font-weight:500}
+.radio-opt label:hover{border-color:#5b6af0;color:#5b6af0}
+.demo-err{font-size:12px;color:#c0392b;display:none}
+.top{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#fff;border-bottom:1px solid #e0ddd6;font-size:13px;flex-shrink:0}
+.top-meta{display:flex;gap:14px;color:#666;flex-wrap:wrap}
+.top-meta b{color:#1a1a1a;font-weight:500}
+.badge{padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;background:#eef0fe;color:#3b4ac8}
+.badge.control{background:#FCEBEB;color:#A32D2D}
+.sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ddd;margin-left:6px;transition:background .3s}
+.sync-dot.saving{background:#f59e0b}
+.sync-dot.saved{background:#22c55e}
+.sync-dot.error{background:#ef4444}
+
+/* MAIN */
+.body{display:flex;flex:1;min-height:0}
+.tcol{flex:1;padding:16px;border-right:1px solid #e0ddd6;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.tmeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.diff{font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px}
+.easy{background:#EAF3DE;color:#3B6D11}
+.medium{background:#FAEEDA;color:#854F0B}
+.hard{background:#FCEBEB;color:#A32D2D}
+.tnum{font-size:12px;color:#999}
+.ttype{font-size:11px;color:#5b6af0;background:#eef0fe;padding:2px 8px;border-radius:8px}
+.qbox{font-size:14px;line-height:1.7;background:#fafafa;border:1px solid #e0ddd6;border-radius:12px;padding:14px 16px;white-space:pre-wrap;overflow-y:auto;max-height:260px}
+.ans-wrap{display:flex;flex-direction:column;gap:4px}
+.ans-label{font-size:12px;color:#666}
+.ans-hint{font-size:11px;color:#5b6af0;font-style:italic}
+textarea{width:100%;min-height:80px;resize:vertical;font-family:system-ui;font-size:13px;color:#1a1a1a;background:#fafafa;border:1px solid #ddd;border-radius:8px;padding:9px 11px;outline:none;transition:border-color .15s}
+textarea:focus{border-color:#5b6af0}
+
+/* CONFIDENCE RADIO */
+.conf-wrap{display:flex;flex-direction:column;gap:6px}
+.conf-label{font-size:12px;color:#666}
+.conf-options{display:flex;gap:6px;flex-wrap:wrap}
+.conf-opt input[type=radio]{display:none}
+.conf-opt label{display:flex;align-items:center;justify-content:center;padding:6px 12px;border:1px solid #ddd;border-radius:8px;font-size:12px;color:#555;cursor:pointer;background:#fafafa;transition:all .15s;white-space:nowrap}
+.conf-opt input[type=radio]:checked + label{background:#5b6af0;color:#fff;border-color:#5b6af0;font-weight:500}
+.conf-opt label:hover{border-color:#5b6af0;color:#5b6af0}
+.lang-btn.sel{background:#5b6af0 !important;color:#fff !important;border-color:#5b6af0 !important}
+
+.acts{display:flex;align-items:center;gap:10px}
+.btn{padding:8px 18px;background:#5b6af0;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.87}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-sec{padding:8px 16px;background:#f5f4f0;color:#555;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer}
+.btn-sec:hover{background:#ece}
+
+/* CF BOX */
+.cf-box{background:#fafafa;border:1px solid #e0ddd6;border-radius:10px;padding:14px 16px;margin-top:4px}
+.cf-q{font-size:13px;font-weight:500;margin-bottom:10px}
+.cf-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.cf-btn{padding:7px 14px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;transition:all .15s}
+.cf-btn:hover{border-color:#5b6af0;color:#5b6af0}
+.cf-btn.sel{background:#5b6af0;color:#fff;border-color:#5b6af0}
+.cf-sub{display:none;flex-direction:column;gap:6px;margin-top:8px}
+.cf-sub.show{display:flex}
+
+/* AI PANEL */
+.acol{width:272px;display:flex;flex-direction:column;background:#fafafa}
+.ai-hdr{padding:10px 13px;border-bottom:1px solid #e0ddd6}
+.ai-hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.ai-lbl{font-size:13px;font-weight:500}
+.ai-pill{font-size:11px;color:#999;background:#fff;border:1px solid #ddd;border-radius:8px;padding:2px 8px}
+.ai-sub{font-size:11px;color:#999}
+.msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;max-height:300px}
+.m{font-size:13px;line-height:1.55;border-radius:8px;padding:8px 11px}
+.m.sys{align-self:center;background:none;border:none;color:#999;font-size:12px;text-align:center}
+.m.ai{align-self:flex-start;background:#fff;border:1px solid #e0ddd6;max-width:96%}
+.bgrp{padding:10px;border-top:1px solid #e0ddd6;display:flex;flex-direction:column;gap:7px}
+.ai-btn{width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px;cursor:pointer;text-align:left;transition:background .15s}
+.ai-btn:hover{background:#f5f4f0}
+.ai-btn.hint{border-color:#5b6af0;color:#3b4ac8}
+.ai-btn.hint:hover{background:#eef0fe}
+.ai-btn.full{border-color:#e74c3c;color:#c0392b}
+.ai-btn.full:hover{background:#fdf0ef}
+.ai-btn.more{border-color:#e67e22;color:#854F0B;font-size:12px}
+.ai-btn.more:hover{background:#FAEEDA}
+.bgrp-note{font-size:12px;color:#999;padding:8px;text-align:center}
+
+/* OVERLAY */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);align-items:center;justify-content:center;z-index:100;padding:20px;overflow-y:auto}
+.ov.on{display:flex}
+.ovc{background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:22px 26px;max-width:480px;width:92%;display:flex;flex-direction:column;gap:12px}
+.ovc h2{font-size:15px;font-weight:500}
+.ov-ans-box{background:#f9f9f9;border:1px solid #e0ddd6;border-radius:8px;padding:10px 12px;font-size:13px;color:#333;line-height:1.6;white-space:pre-wrap;max-height:160px;overflow-y:auto}
+.ov-ans-label{font-size:12px;color:#999;margin-bottom:4px}
+.orow{font-size:13px;color:#666;line-height:1.5}
+.orow b{color:#1a1a1a;font-weight:500}
+.ostat{font-size:13px;color:#666}
+.ostat b{color:#1a1a1a;font-weight:500}
+.self-score-wrap{display:flex;flex-direction:column;gap:8px}
+.self-score-wrap .qlbl{font-size:13px;font-weight:500}
+.ss-row{display:flex;gap:8px;flex-wrap:wrap}
+.ss-btn{padding:7px 14px;background:#f5f4f0;border:1px solid #ddd;border-radius:8px;font-size:12px;cursor:pointer;transition:all .15s}
+.ss-btn:hover{background:#eef0fe;border-color:#5b6af0;color:#3b4ac8}
+.ss-btn.sel{background:#5b6af0;color:#fff;border-color:#5b6af0}
+
+/* DONE */
+.done{align-items:center;justify-content:center;padding:32px;gap:14px;text-align:center;min-height:100vh}
+.done h2{font-size:15px;font-weight:500}
+.done p{font-size:13px;color:#666;max-width:380px;line-height:1.6}
+.summ{background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:16px 20px;max-width:480px;width:100%;text-align:left;font-size:13px;line-height:1.9;color:#555}
+.summ b{color:#1a1a1a;font-weight:500}
+.pdf-hint{font-size:13px;color:#3b4ac8;font-weight:500;background:#eef0fe;padding:10px 16px;border-radius:8px;max-width:480px;width:100%;text-align:center}
+
+/* PRINT OVERLAY */
+#print-overlay{display:none;position:fixed;inset:0;background:#fff;z-index:9999;overflow-y:auto;padding:48px;color:#111;font-family:Arial,sans-serif;font-size:14px;line-height:1.9}
+#print-overlay h1{font-size:17px;font-weight:600;margin-bottom:20px;border-bottom:1px solid #ddd;padding-bottom:10px}
+#print-overlay .footer{margin-top:40px;font-size:11px;color:#888;border-top:1px solid #eee;padding-top:10px}
+.close-print{position:fixed;top:16px;right:16px;padding:8px 16px;background:#333;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px}
+@media print{.close-print{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ENTRY -->
+  <div class="screen on entry" id="s-entry">
+    <div class="entry-card">
+      <h2>Cognitive experiment / 認知実験</h2>
+      <p>Please select your language / 言語を選択してください</p>
+      <div style="display:flex;gap:10px;margin-bottom:4px">
+        <button id="lang-en" class="lang-btn sel" onclick="setLang('en')"
+          style="padding:8px 20px;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer;background:#5b6af0;color:#fff;font-weight:500">
+          English
+        </button>
+        <button id="lang-jp" class="lang-btn" onclick="setLang('jp')"
+          style="padding:8px 20px;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer;background:#fafafa;color:#555">
+          日本語
+        </button>
+      </div>
+      <div class="field">
+        <label>PARTICIPANT ID / 参加者ID</label>
+        <input id="pid-input" placeholder="e.g. P-001" autocomplete="off" onkeydown="if(event.key==='Enter')startExp()"/>
+        <span class="err" id="pid-err">Please enter your participant ID. / 参加者IDを入力してください。</span>
+      </div>
+      <div class="field">
+        <label>SESSION NUMBER / セッション番号</label>
+        <input id="sess-input" placeholder="1, 2, 3, or 4" type="number" min="1" max="4" value="1"/>
+        <span class="hint">Sessions 1–3: AI available · Session 4: no AI control / セッション1〜3：AI利用可能 · セッション4：AIなしコントロール</span>
+        <span class="err" id="sess-err">Session must be 1, 2, 3, or 4. / セッション番号は1〜4です。</span>
+      </div>
+      <button class="btn" onclick="startExp()">Start experiment / 実験を開始する</button>
+    </div>
+  </div>
+
+  <!-- DEMOGRAPHIC FORM (Session 1 only) -->
+  <div class="screen entry" id="s-demo">
+    <div class="demo-card">
+      <h2 id="demo-title">Background information / 基本情報</h2>
+      <p id="demo-desc">Please answer these brief questions before starting. This information will only be used for research analysis. / 開始前に以下の質問にお答えください。この情報は研究分析のみに使用されます。</p>
+
+      <div class="demo-section">
+        <label id="demo-gender-lbl">GENDER / 性別</label>
+        <div class="radio-group">
+          <div class="radio-opt"><input type="radio" name="d-gender" id="dg1" value="male"><label for="dg1">Male / 男性</label></div>
+          <div class="radio-opt"><input type="radio" name="d-gender" id="dg2" value="female"><label for="dg2">Female / 女性</label></div>
+          <div class="radio-opt"><input type="radio" name="d-gender" id="dg3" value="non-binary"><label for="dg3">Non-binary / ノンバイナリー</label></div>
+          <div class="radio-opt"><input type="radio" name="d-gender" id="dg4" value="prefer_not_to_say"><label for="dg4">Prefer not to say / 回答しない</label></div>
+        </div>
+        <span class="demo-err" id="err-gender">Please select an option. / 選択してください。</span>
+      </div>
+
+      <div class="demo-section">
+        <label id="demo-age-lbl">AGE GROUP / 年齢層</label>
+        <div class="radio-group">
+          <div class="radio-opt"><input type="radio" name="d-age" id="da1" value="18-22"><label for="da1">18–22</label></div>
+          <div class="radio-opt"><input type="radio" name="d-age" id="da2" value="23-27"><label for="da2">23–27</label></div>
+          <div class="radio-opt"><input type="radio" name="d-age" id="da3" value="28-32"><label for="da3">28–32</label></div>
+          <div class="radio-opt"><input type="radio" name="d-age" id="da4" value="33+"><label for="da4">33+</label></div>
+        </div>
+        <span class="demo-err" id="err-age">Please select an option. / 選択してください。</span>
+      </div>
+
+      <div class="demo-section">
+        <label id="demo-level-lbl">ACADEMIC LEVEL / 学年</label>
+        <div class="radio-group">
+          <div class="radio-opt"><input type="radio" name="d-level" id="dl1" value="undergraduate"><label for="dl1">Undergraduate / 学部生</label></div>
+          <div class="radio-opt"><input type="radio" name="d-level" id="dl2" value="masters"><label for="dl2">Master's / 修士</label></div>
+          <div class="radio-opt"><input type="radio" name="d-level" id="dl3" value="phd"><label for="dl3">PhD / 博士</label></div>
+          <div class="radio-opt"><input type="radio" name="d-level" id="dl4" value="other"><label for="dl4">Other / その他</label></div>
+        </div>
+        <span class="demo-err" id="err-level">Please select an option. / 選択してください。</span>
+      </div>
+
+      <div class="demo-section">
+        <label id="demo-field-lbl">FIELD OF STUDY / 専攻分野</label>
+        <div class="radio-group">
+          <div class="radio-opt"><input type="radio" name="d-field" id="df1" value="STEM"><label for="df1">STEM</label></div>
+          <div class="radio-opt"><input type="radio" name="d-field" id="df2" value="humanities"><label for="df2">Humanities / 人文科学</label></div>
+          <div class="radio-opt"><input type="radio" name="d-field" id="df3" value="social_sciences"><label for="df3">Social Sciences / 社会科学</label></div>
+          <div class="radio-opt"><input type="radio" name="d-field" id="df4" value="other"><label for="df4">Other / その他</label></div>
+        </div>
+        <span class="demo-err" id="err-field">Please select an option. / 選択してください。</span>
+      </div>
+
+      <div class="demo-section">
+        <label id="demo-ai-lbl">HOW OFTEN DO YOU USE AI TOOLS? / AIツールをどのくらい使いますか？</label>
+        <div class="radio-group">
+          <div class="radio-opt"><input type="radio" name="d-ai" id="dai1" value="daily"><label for="dai1">Daily / 毎日</label></div>
+          <div class="radio-opt"><input type="radio" name="d-ai" id="dai2" value="weekly"><label for="dai2">Weekly / 週に数回</label></div>
+          <div class="radio-opt"><input type="radio" name="d-ai" id="dai3" value="rarely"><label for="dai3">Rarely / たまに</label></div>
+          <div class="radio-opt"><input type="radio" name="d-ai" id="dai4" value="never"><label for="dai4">Never / 使わない</label></div>
+        </div>
+        <span class="demo-err" id="err-ai">Please select an option. / 選択してください。</span>
+      </div>
+
+      <button class="btn" onclick="submitDemo()">Continue to experiment / 実験へ進む</button>
+    </div>
+  </div>
+  <div class="screen" id="s-exp">
+    <div class="top">
+      <div class="top-meta">
+        <span>PID <b id="pid-lbl">—</b></span>
+        <span>Session <b id="sess-lbl">—</b></span>
+        <span id="date-lbl" style="color:#999"></span>
+      </div>
+      <span class="badge" id="phase-badge">AI available</span>
+      <span style="font-size:12px;color:#999">sync <span class="sync-dot" id="sync-dot"></span></span>
+    </div>
+
+    <div class="body" id="body">
+      <div class="tcol">
+        <div class="tmeta">
+          <span class="diff easy" id="diff">Easy</span>
+          <span class="tnum" id="tnum">Task 1 of 3</span>
+          <span class="ttype" id="task-type">Reading Comprehension</span>
+        </div>
+        <div class="qbox" id="qbox">Loading…</div>
+        <div class="ans-wrap">
+          <span class="ans-label">Your answer</span>
+          <span class="ans-hint" id="ans-hint"></span>
+          <textarea id="ans" placeholder="Write your answer here…"></textarea>
+        </div>
+
+        <!-- CONFIDENCE RADIO -->
+        <div class="conf-wrap">
+          <span class="conf-label">How confident are you in your answer?</span>
+          <div class="conf-options">
+            <div class="conf-opt"><input type="radio" name="conf" id="c1" value="1"><label for="c1">Very unconfident</label></div>
+            <div class="conf-opt"><input type="radio" name="conf" id="c2" value="2"><label for="c2">Unconfident</label></div>
+            <div class="conf-opt"><input type="radio" name="conf" id="c3" value="3" checked><label for="c3">Neutral</label></div>
+            <div class="conf-opt"><input type="radio" name="conf" id="c4" value="4"><label for="c4">Confident</label></div>
+            <div class="conf-opt"><input type="radio" name="conf" id="c5" value="5"><label for="c5">Very confident</label></div>
+          </div>
+        </div>
+
+        <div class="acts">
+          <button class="btn" id="subbtn" onclick="sub()">Submit answer</button>
+        </div>
+
+        <!-- COUNTERFACTUAL (session 4 only) -->
+        <div class="cf-box" id="cf-box" style="display:none">
+          <div class="cf-q" id="cf-q1">If AI assistance had been available right now, would you have used it for this task?</div>
+          <div class="cf-row">
+            <button class="cf-btn" id="cf-no-btn" onclick="cfChoice(false,this)">No — I would have solved it myself</button>
+            <button class="cf-btn" id="cf-yes-btn" onclick="cfChoice(true,this)">Yes — I would have used it</button>
+          </div>
+          <div class="cf-sub" id="cf-sub">
+            <div class="cf-q" id="cf-q2" style="margin-bottom:6px">Which level would you have chosen?</div>
+            <div class="cf-row">
+              <button class="cf-btn" id="cf-h1-btn" onclick="cfLevel('hint1',this)">💡 Concept hint</button>
+              <button class="cf-btn" id="cf-h2-btn" onclick="cfLevel('hint2',this)">📐 Step-by-step hint</button>
+              <button class="cf-btn" id="cf-f-btn" onclick="cfLevel('full',this)">✓ Full answer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="acol">
+        <div class="ai-hdr">
+          <div class="ai-hdr-top">
+            <span class="ai-lbl">AI assistant</span>
+            <span class="ai-pill" id="ai-pill">Not used</span>
+          </div>
+          <div class="ai-sub">Choose how much help you want</div>
+        </div>
+        <div class="msgs" id="msgs">
+          <div class="m sys">Hello! How can I help today?<br><br>Choose an option below.</div>
+        </div>
+        <div class="bgrp" id="bgrp">
+          <button class="ai-btn hint" onclick="aiChoice('hint1')">💡 Hint — explain the concept</button>
+          <button class="ai-btn full" onclick="aiChoice('full')">✓ Full answer with reasoning</button>
+          <button class="ai-btn btn-sec" onclick="aiChoice('none')" style="font-size:12px">I don't need help</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DONE -->
+  <div class="screen done" id="s-done">
+    <h2>Session complete</h2>
+    <p>Your responses have been saved. Please also download the CSV backup and email it to the researcher.</p>
+    <p class="pdf-hint" id="pdf-name-hint"></p>
+    <div class="summ" id="summbox"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <button class="btn" onclick="downloadCSV()">⬇ Download CSV backup</button>
+      <button class="btn-sec" onclick="goEntry()">New participant</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- TASK OVERLAY -->
+<div class="ov" id="ov">
+  <div class="ovc">
+    <h2 id="ovt">Task submitted</h2>
+    <div class="ov-ans-label" id="ov-ans-label">Your answer</div>
+    <div class="ov-ans-box" id="ov-ans-box"></div>
+    <div class="orow" id="ovc2"></div>
+    <div style="display:flex;flex-direction:column;gap:4px" id="ovs"></div>
+    <div class="self-score-wrap" id="self-score-area"></div>
+    <button class="btn" id="ovnxt" onclick="nxt()" style="display:none">Next task →</button>
+  </div>
+</div>
+
+<!-- PRINT OVERLAY (CSV preview before download) -->
+<div id="print-overlay">
+  <button class="close-print" onclick="closePrint()">✕ Close</button>
+  <h1>Session data — CSV preview</h1>
+  <div id="print-content" style="font-family:monospace;font-size:12px;white-space:pre-wrap;background:#f5f5f5;padding:16px;border-radius:8px;overflow-x:auto"></div>
+  <div class="footer" id="print-footer"></div>
+</div>
+
+<script src="tasks.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
